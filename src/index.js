@@ -1,60 +1,25 @@
 import { Display, draw } from './display/index.js';
+import { State } from './state.js';
+import { cycle } from './cpu/index.js';
 
+import { sprites, IBMLogo } from './assets.js';
+
+const TIMER_SCALER = 12;
 
 const context = document.querySelector('canvas').getContext('2d');
 const display = Display();
 
-display.flipPixel(1, 1);
-display.flipPixel(1, 2);
-display.flipPixel(1, 3);
-display.flipPixel(1, 4);
-display.flipPixel(1, 5);
-display.flipPixel(2, 3);
-display.flipPixel(3, 1);
-display.flipPixel(3, 2);
-display.flipPixel(3, 3);
-display.flipPixel(3, 4);
-display.flipPixel(3, 5);
+const state = State();
 
-display.flipPixel(5, 1);
-display.flipPixel(5, 2);
-display.flipPixel(5, 3);
-display.flipPixel(5, 4);
-display.flipPixel(5, 5);
-display.flipPixel(6, 1);
-display.flipPixel(6, 3);
-display.flipPixel(6, 5);
-display.flipPixel(7, 1);
-display.flipPixel(7, 3);
-display.flipPixel(7, 5);
+state.memory.set(sprites, 0);
+state.memory.set(IBMLogo, 0x200);
+state.programCounter = 0x200;
 
-display.flipPixel(9, 1);
-display.flipPixel(9, 2);
-display.flipPixel(9, 3);
-display.flipPixel(9, 4);
-display.flipPixel(9, 5);
-display.flipPixel(10, 5);
-display.flipPixel(11, 5);
+setInterval(() => {
+	for (let i = 0; i < TIMER_SCALER; i++) {
+		cycle({ state, display });
+	}
 
-display.flipPixel(13, 1);
-display.flipPixel(13, 2);
-display.flipPixel(13, 3);
-display.flipPixel(13, 4);
-display.flipPixel(13, 5);
-display.flipPixel(14, 5);
-display.flipPixel(15, 5);
+	draw(display, context);
+}, 1000 / 60);
 
-display.flipPixel(17, 1);
-display.flipPixel(17, 2);
-display.flipPixel(17, 3);
-display.flipPixel(17, 4);
-display.flipPixel(17, 5);
-display.flipPixel(18, 1);
-display.flipPixel(18, 5);
-display.flipPixel(19, 1);
-display.flipPixel(19, 2);
-display.flipPixel(19, 3);
-display.flipPixel(19, 4);
-display.flipPixel(19, 5);
-
-draw(display, context);
