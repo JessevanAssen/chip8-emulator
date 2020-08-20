@@ -17,21 +17,32 @@ export function cycle({ state, display }) {
 
 	switch (instruction) {
 	case 0x0:
-		if (Y === 0xE) {
+		switch (optcode) {
+		case 0x00E0:
 			display.clear();
 			incrementProgramCounter();
+			break;
+		case 0x00EE:
+			state.programCounter = state.stack.pop();
+			incrementProgramCounter();
+			break;
 		}
 		break;
 	case 0x1:
 		state.programCounter = NNN;
 		break;
 	case 0x2:
+		state.stack.push(state.programCounter);
+		state.programCounter = NNN;
 		break;
 	case 0x3:
+		state.programCounter += (state.registers[X] === NN ? 4 : 2);
 		break;
 	case 0x4:
+		state.programCounter += (state.registers[X] !== NN ? 4 : 2);
 		break;
 	case 0x5:
+		state.programCounter += (state.registers[X] === state.registers[Y] ? 4 : 2);
 		break;
 	case 0x6:
 		state.registers[X] = NN;
@@ -42,14 +53,57 @@ export function cycle({ state, display }) {
 		incrementProgramCounter();
 		break;
 	case 0x8:
+		switch(N) {
+		case 0x0:
+			state.registers[X] = state.registers[Y];
+			break;
+		case 0x1:
+			state.registers[X] |= state.registers[Y];
+			break;
+		case 0x2:
+			state.registers[X] &= state.registers[Y];
+			break;
+		case 0x3:
+			state.registers[X] ^= state.registers[Y];
+			break;
+		case 0x4: {
+			const result = state.registers[X] + state.registers[Y];
+			state.registers[X] = result;
+			state.registers[0xF] = (result >> 8) & 1;
+			break;
+		}
+		case 0x5: {
+			const result = state.registers[X] - state.registers[Y];
+			state.registers[X] = result;
+			state.registers[0xF] = result < 0 ? 1 : 0;
+			break;
+		}
+		case 0x6:
+			state.registers[0xF] = state.registers[X] & 1;
+			state.registers[X] >>= 1;
+			break;
+		case 0x7: {
+			const result = state.registers[Y] - state.registers[X];
+			state.registers[X] = result;
+			state.registers[0xF] = result < 0 ? 1 : 0;
+			break;
+		}
+		case 0xE:
+			state.registers[0xF] = (state.registers[X] >> 7) & 1;
+			state.registers[X] <<= 1;
+			break;
+		}
+		incrementProgramCounter();
 		break;
 	case 0x9:
+		state.programCounter += (state.registers[X] !== state.registers[Y] ? 4 : 2);
 		break;
 	case 0xA:
 		state.addressRegister[0] = NNN;
 		incrementProgramCounter();
 		break;
 	case 0xB:
+		state.programCounter = NNN + state.registers[0];
 		break;
 	case 0xC:
 		break;
@@ -77,6 +131,12 @@ export function cycle({ state, display }) {
 	case 0xE:
 		break;
 	case 0xF:
+		switch (NN) {
+		case 0x1E:
+			state.addressRegister[0] += state.registers[X];
+			incrementProgramCounter();
+			break;
+		}
 		break;
 	}
 

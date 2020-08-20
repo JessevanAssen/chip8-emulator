@@ -44,11 +44,17 @@ describe('cycle', () => {
 			expect(setup.display.clear).toHaveBeenCalled();
 		});
 
-		test('increments the program counter', () => {
-			const setup = Setup({ program });
+	});
+
+	describe('0x00EE', () => {
+		test('pops the last address of the stack, and sets it to the program counter, and steps to the next instruction', () => {
+			const setup = Setup({ program: [0x00EE] });
+			setup.state.stack.push(0x1234);
 
 			cycle(setup);
-			expect(setup.state.programCounter).toBe(2);
+
+			expect(setup.state.programCounter).toBe(0x1234 + 2);
+			expect(setup.state.stack).toEqual([]);
 		});
 	});
 
@@ -58,6 +64,95 @@ describe('cycle', () => {
 
 			cycle(setup);
 			expect(setup.state.programCounter).toBe(0x234);
+		});
+	});
+
+
+	describe('0x2NNN', () => {
+		test('pushes the current program counter to the stack', () => {
+			const setup = SetupTest();
+			cycle(setup);
+			expect(setup.state.stack).toEqual([0xA]);
+		});
+
+		test('sets the program counter to NNN', () => {
+			const setup = SetupTest();
+			cycle(setup);
+			expect(setup.state.programCounter).toBe(0x345);
+		});
+
+		function SetupTest() {
+			const setup = Setup({ program: [0, 0, 0, 0, 0, 0x2345] });
+			setup.state.programCounter = 0xA;
+			return setup;
+		}
+	});
+
+	describe('0x3XNN', () => {
+		const NN = 0x56;
+		const X = 0x4;
+		const program = [0x3000 | (X << 8) | NN];
+
+		test('increments the program counter by 4 if the value in register X matches NN', () => {
+			const setup = Setup({ program });
+			setup.state.registers[X] = NN;
+
+			cycle(setup);
+			expect(setup.state.programCounter).toBe(4);
+		});
+
+		test('increments the program counter by 2 if the value in register X does not match NN', () => {
+			const setup = Setup({ program });
+			setup.state.registers[X] = NN + 1;
+
+			cycle(setup);
+			expect(setup.state.programCounter).toBe(2);
+		});
+	});
+
+	describe('0x4XNN', () => {
+		const NN = 0x56;
+		const X = 0x5;
+		const program = [0x4000 | (X << 8) | NN];
+
+		test('increments the program counter by 2 if the value in register X matches NN', () => {
+			const setup = Setup({ program });
+			setup.state.registers[X] = NN;
+
+			cycle(setup);
+			expect(setup.state.programCounter).toBe(2);
+		});
+
+		test('increments the program counter by 4 if the value in register X does not match NN', () => {
+			const setup = Setup({ program });
+			setup.state.registers[X] = NN + 1;
+
+			cycle(setup);
+			expect(setup.state.programCounter).toBe(4);
+		});
+	});
+
+	describe('0x5XY0', () => {
+		const X = 0x6;
+		const Y = 0x7;
+		const program = [0x5000 | (X << 8) | (Y << 4)];
+
+		test('increments the program counter by 4 if the value in register X matches the value in register Y', () => {
+			const setup = Setup({ program });
+			setup.state.registers[X] = 0xFF;
+			setup.state.registers[Y] = 0xFF;
+
+			cycle(setup);
+			expect(setup.state.programCounter).toBe(4);
+		});
+
+		test('increments the program counter by 2 if the value in register X does not match the value in register Y', () => {
+			const setup = Setup({ program });
+			setup.state.registers[X] = 0xFF;
+			setup.state.registers[Y] = 0xEE;
+
+			cycle(setup);
+			expect(setup.state.programCounter).toBe(2);
 		});
 	});
 
@@ -73,12 +168,7 @@ describe('cycle', () => {
 			expect(setup.state.registers[register]).toBe(value);
 		});
 
-		test('increments the program counter', () => {
-			const setup = Setup({ program });
-
-			cycle(setup);
-			expect(setup.state.programCounter).toBe(2);
-		});
+		testIncrementsProgramCounter({ program });
 	});
 
 	describe('0x7XNN', () => {
@@ -106,11 +196,187 @@ describe('cycle', () => {
 			expect(setup.state.registers[register]).toBe((value * 4) % 0x100);
 		});
 
-		test('increments the program counter', () => {
+		testIncrementsProgramCounter({ program });
+	});
+
+	{
+		const X = 0x1;
+		const Y = 0x2;
+
+		const SetupTest = ({ instruction, x = 0, y = 0 }) => {
+			const program = [0x8000 | (X << 8) | (Y << 4) | instruction];
 			const setup = Setup({ program });
+			setup.state.registers[X] = x;
+			setup.state.registers[Y] = y;
+			return setup;
+		};
+
+		describe('0x8XY0', () => {
+			test('assigns the value in register Y to register X', () => {
+				const setup = SetupTest({ instruction: 0, y: 0xFF });
+				cycle(setup);
+				expect(setup.state.registers[X]).toBe(0xFF);
+			});
+
+			testIncrementsProgramCounter({ program: [0x8000] });
+		});
+
+		describe('0x8XY1', () => {
+			test('does a bitwise OR between the values in registers X and Y, and assigns the value to register X', () => {
+				const setup = SetupTest({ instruction: 1, x: 0b11110000, y: 0b11001100 });
+				cycle(setup);
+				expect(setup.state.registers[X]).toBe(0b11111100);
+			});
+
+			testIncrementsProgramCounter({ program: [0x8001] });
+		});
+
+		describe('0x8XY2', () => {
+			test('does a bitwise AND between the values in registers X and Y, and assigns the value to register X', () => {
+				const setup = SetupTest({ instruction: 2, x: 0b11110000, y: 0b11001100 });
+				cycle(setup);
+				expect(setup.state.registers[X]).toBe(0b11000000);
+			});
+
+			testIncrementsProgramCounter({ program: [0x8002] });
+		});
+
+		describe('0x8XY3', () => {
+			test('does a bitwise XOR between the values in registers X and Y, and assigns the value to register X', () => {
+				const setup = SetupTest({ instruction: 3, x: 0b11110000, y: 0b11001100 });
+				cycle(setup);
+				expect(setup.state.registers[X]).toBe(0b00111100);
+			});
+
+			testIncrementsProgramCounter({ program: [0x8003] });
+		});
+
+		describe('0x8XY4', () => {
+			test('adds the value of register Y to the value of register X', () => {
+				const x = 0b00111111, y = 0b1;
+				const setup = SetupTest({ instruction: 4, x, y });
+				cycle(setup);
+
+				expect(setup.state.registers[X]).toBe(x + y);
+				expect(setup.state.registers[0xF]).toBe(0);
+			});
+
+			test('stores the carry in register F', () => {
+				const x = 0b11111111, y = 0b11111111;
+				const setup = SetupTest({ instruction: 4, x, y });
+				cycle(setup);
+
+				expect(setup.state.registers[X]).toBe(0b11111110);
+				expect(setup.state.registers[0xF]).toBe(1);
+			});
+
+			testIncrementsProgramCounter({ program: [0x8004] });
+		});
+
+		describe('0x8XY5', () => {
+			test('subtracts the value in register Y from the value in register X, and stores the result in register X', () => {
+				const x = 100, y = 25;
+				const setup = SetupTest({ instruction: 5, x, y });
+
+				cycle(setup);
+
+				expect(setup.state.registers[X]).toBe(75);
+				expect(setup.state.registers[0xF]).toBe(0);
+			});
+
+			test('stores the borrow bit if the value becomes negative', () => {
+				const x = 25, y = 100;
+				const setup = SetupTest({ instruction: 5, x, y });
+
+				cycle(setup);
+
+				expect(setup.state.registers[X]).toBe(256 - 75);
+				expect(setup.state.registers[0xF]).toBe(1);
+			});
+
+			testIncrementsProgramCounter({ program: [0x8005] });
+		});
+
+		describe('0x8XY6', () => {
+			test('shifts the value in register X to the right', () => {
+				const setup = Setup({ program: [0x8006, 0x8006] });
+				setup.state.registers[0x0] = 0b11111110;
+
+				cycle(setup);
+				expect(setup.state.registers[0x0]).toBe(0b01111111);
+				expect(setup.state.registers[0xF]).toBe(0);
+
+				cycle(setup);
+				expect(setup.state.registers[0x0]).toBe(0b00111111);
+				expect(setup.state.registers[0xF]).toBe(1);
+			});
+
+			testIncrementsProgramCounter({ program: [0x8006] });
+		});
+
+		describe('0x8XY7', () => {
+			test('subtracts the value in register Y from the value in register X, and stores the result in register X', () => {
+				const x = 25, y = 100;
+				const setup = SetupTest({ instruction: 7, x, y });
+
+				cycle(setup);
+
+				expect(setup.state.registers[X]).toBe(75);
+				expect(setup.state.registers[0xF]).toBe(0);
+			});
+
+			test('stores the borrow bit if the value becomes negative', () => {
+				const x = 100, y = 25;
+				const setup = SetupTest({ instruction: 7, x, y });
+
+				cycle(setup);
+
+				expect(setup.state.registers[X]).toBe(256 - 75);
+				expect(setup.state.registers[0xF]).toBe(1);
+			});
+
+			testIncrementsProgramCounter({ program: [0x8007] });
+		});
+
+		describe('0x8XYE', () => {
+			test('shifts the value in register X to the left', () => {
+				const setup = Setup({ program: [0x800E, 0x800E] });
+				setup.state.registers[0x0] = 0b01111111;
+
+				cycle(setup);
+				expect(setup.state.registers[0x0]).toBe(0b11111110);
+				expect(setup.state.registers[0xF]).toBe(0);
+
+				cycle(setup);
+				expect(setup.state.registers[0x0]).toBe(0b11111100);
+				expect(setup.state.registers[0xF]).toBe(1);
+			});
+
+			testIncrementsProgramCounter({ program: [0x800E] });
+		});
+	}
+
+	describe('0x9XY0', () => {
+		const X = 0x6;
+		const Y = 0x7;
+		const program = [0x9000 | (X << 8) | (Y << 4)];
+
+		test('increments the program counter by 2 if the value in register X matches the value in register Y', () => {
+			const setup = Setup({ program });
+			setup.state.registers[X] = 0xFF;
+			setup.state.registers[Y] = 0xFF;
 
 			cycle(setup);
 			expect(setup.state.programCounter).toBe(2);
+		});
+
+		test('increments the program counter by 4 if the value in register X does not match the value in register Y', () => {
+			const setup = Setup({ program });
+			setup.state.registers[X] = 0xFF;
+			setup.state.registers[Y] = 0xEE;
+
+			cycle(setup);
+			expect(setup.state.programCounter).toBe(4);
 		});
 	});
 
@@ -125,11 +391,16 @@ describe('cycle', () => {
 			expect(setup.state.addressRegister[0]).toBe(address);
 		});
 
-		test('increments the program counter', () => {
-			const setup = Setup({ program });
+		testIncrementsProgramCounter({ program });
+	});
+
+	describe('0xBNNN', () => {
+		test('sets the program counter to NNN + the value in register 0', () => {
+			const setup = Setup({ program: [0xB123] });
+			setup.state.registers[0] = 1;
 
 			cycle(setup);
-			expect(setup.state.programCounter).toBe(2);
+			expect(setup.state.programCounter).toBe(0x124);
 		});
 	});
 
@@ -181,6 +452,24 @@ describe('cycle', () => {
 		});
 	});
 
+	describe('FX1E', () => {
+		const address = randomInt({ max: 0x100 });
+		const X = randomInt({ min: 0, max: 0xF });
+		const program = [0xF01E | X << 8];
+
+		test('adds the value in register X to the value in the address register', () => {
+			const x = randomInt({ min: 1, max: 0x100 });
+			const setup = Setup({ program });
+			setup.state.addressRegister[0] = address;
+			setup.state.registers[X] = x;
+
+			cycle(setup);
+			expect(setup.state.addressRegister[0]).toBe(address + x);
+		});
+
+		testIncrementsProgramCounter({ program });
+	});
+
 	test('decrements the timers if they are above 0', () => {
 		const setup = Setup({ program: [0x00E0, 0x00E0, 0x00E0] });
 		setup.state.delayTimer = 2;
@@ -211,6 +500,16 @@ function Setup({ program = required('program') } = {}) {
 	};
 
 	return { state, display };
+}
+
+function testIncrementsProgramCounter({ program, initialProgramCounter = 0, expectedIncrease = 2 }) {
+	test(`increments the program counter by ${expectedIncrease}`, () => {
+		const setup = Setup({ program });
+		setup.state.programCounter = initialProgramCounter;
+
+		cycle(setup);
+		expect(setup.state.programCounter).toBe(initialProgramCounter + expectedIncrease);
+	});
 }
 
 function required(parameter) {
