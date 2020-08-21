@@ -136,6 +136,18 @@ export function cycle({ state, display }) {
 			state.addressRegister[0] += state.registers[X];
 			incrementProgramCounter();
 			break;
+		case 0x55:
+			state.memory.set(
+				state.registers.slice(0, X + 1),
+				state.addressRegister[0]);
+			incrementProgramCounter();
+			break;
+		case 0x65:
+			state.registers.set(
+				state.memory.slice(state.addressRegister[0], state.addressRegister[0] + X + 1),
+				0);
+			incrementProgramCounter();
+			break;
 		}
 		break;
 	}

@@ -452,6 +452,46 @@ describe('cycle', () => {
 		});
 	});
 
+	describe('0xFX55', () => {
+		test('dumps the registers to memory', () => {
+			const count = randomInt({ min: 0, max: 0x10 });
+			const setup = Setup({ program: [0xF055 | count << 8] });
+			setup.state.addressRegister[0] = 0xFF;
+			for (let i = 0; i <= 0xF; i++) {
+				setup.state.registers[i] = i + 1;
+			}
+
+			cycle(setup);
+
+			for (let i = 0; i <= 0xF; i++) {
+				const expected = i <= count ? i + 1 : 0;
+				expect(setup.state.memory[0xFF + i]).toBe(expected);
+			}
+		});
+
+		testIncrementsProgramCounter({ program: [0xF055] });
+	});
+
+	describe('0xFX65', () => {
+		test('loads the registers from memory', () => {
+			const count = randomInt({ min: 0, max: 0x10 });
+			const setup = Setup({ program: [0xF065 | count << 8] });
+			setup.state.addressRegister[0] = 0xFF;
+			for (let i = 0; i <= 0xF; i++) {
+				setup.state.memory[0xFF + i] = i + 1;
+			}
+
+			cycle(setup);
+
+			for (let i = 0; i <= 0xF; i++) {
+				const expected = i <= count ? i + 1 : 0;
+				expect(setup.state.registers[i]).toBe(expected);
+			}
+		});
+
+		testIncrementsProgramCounter({ program: [0xF065] });
+	});
+
 	describe('FX1E', () => {
 		const address = randomInt({ max: 0x100 });
 		const X = randomInt({ min: 0, max: 0xF });
