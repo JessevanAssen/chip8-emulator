@@ -2,6 +2,7 @@ import { jest } from '@jest/globals';
 
 import { decodeOptcode, cycle } from './cpu.js';
 import { State } from '../state.js';
+import { randomInt } from '../utils.js';
 
 
 describe('decodeOptcode', () => {
@@ -452,6 +453,59 @@ describe('cycle', () => {
 		});
 	});
 
+	describe('0xFX07', () => {
+		const X = 0x3;
+		const program = [0xF007 | X << 8];
+
+		test('stores the value of the delay timer in register X', () => {
+			const timerScaler = randomInt({ min: 10, max: 20 });
+			const setup = Setup({ program, timerScaler });
+			setup.state.delayTimer = 5.5 * timerScaler;
+
+			cycle(setup);
+
+			expect(setup.state.registers[X]).toBe(6);
+		});
+
+		testIncrementsProgramCounter({ program });
+	});
+
+	describe('0xFX15', () => {
+		const X = 0xB;
+		const program = [0xF015 | X << 8];
+
+		test('sets the delay timer to the value in register X', () => {
+			const timerScaler = randomInt({ min: 10, max: 20 });
+			const setup = Setup({ program, timerScaler });
+			setup.state.registers[X] = 6;
+
+			cycle(setup);
+
+			const expected = 6 * timerScaler - 1; //  Subtract 1, because the timers are decremented at the end of the cycle
+			expect(setup.state.delayTimer).toBe(expected);
+		});
+
+		testIncrementsProgramCounter({ program });
+	});
+
+	describe('0xFX18', () => {
+		const X = 0xB;
+		const program = [0xF018 | X << 8];
+
+		test('sets the delay timer to the value in register X', () => {
+			const timerScaler = randomInt({ min: 10, max: 20 });
+			const setup = Setup({ program, timerScaler });
+			setup.state.registers[X] = 6;
+
+			cycle(setup);
+
+			const expected = 6 * timerScaler - 1; //  Subtract 1, because the timers are decremented at the end of the cycle
+			expect(setup.state.soundTimer).toBe(expected);
+		});
+
+		testIncrementsProgramCounter({ program });
+	});
+
 	describe('0xFX55', () => {
 		test('dumps the registers to memory', () => {
 			const count = randomInt({ min: 0, max: 0x10 });
@@ -524,10 +578,20 @@ describe('cycle', () => {
 		cycle(setup);
 		expect(setup.state).toEqual(expect.objectContaining({ delayTimer: 0, soundTimer: 0 }));
 	});
+
+	function testIncrementsProgramCounter({ program, initialProgramCounter = 0, expectedIncrease = 2 }) {
+		test(`increments the program counter by ${expectedIncrease}`, () => {
+			const setup = Setup({ program });
+			setup.state.programCounter = initialProgramCounter;
+
+			cycle(setup);
+			expect(setup.state.programCounter).toBe(initialProgramCounter + expectedIncrease);
+		});
+	}
 });
 
-function Setup({ program = required('program') } = {}) {
-	const state = State();
+function Setup({ program = required('program'), timerScaler = 10 } = {}) {
+	const state = State({ timerScaler });
 
 	for (let i = 0; i < program.length; i++) {
 		state.memory[i * 2] = (program[i] >> 8) & 0xFF;
@@ -542,20 +606,6 @@ function Setup({ program = required('program') } = {}) {
 	return { state, display };
 }
 
-function testIncrementsProgramCounter({ program, initialProgramCounter = 0, expectedIncrease = 2 }) {
-	test(`increments the program counter by ${expectedIncrease}`, () => {
-		const setup = Setup({ program });
-		setup.state.programCounter = initialProgramCounter;
-
-		cycle(setup);
-		expect(setup.state.programCounter).toBe(initialProgramCounter + expectedIncrease);
-	});
-}
-
 function required(parameter) {
 	throw new Error(`[Setup] Parameter "${parameter}" is required`);
-}
-
-function randomInt({ min = 0, max = 1} = {}) {
-	return Math.floor(Math.random() * (max - min) + min);
 }

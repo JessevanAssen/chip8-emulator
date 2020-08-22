@@ -10,7 +10,7 @@ export function decodeOptcode(optcode) {
 }
 
 export function cycle({ state, display }) {
-	const incrementProgramCounter = () => { state.programCounter += 2; };
+	const incrementProgramCounter = (n = 2) => { state.programCounter += n; };
 
 	const optcode = (state.memory[state.programCounter] << 8) | state.memory[state.programCounter + 1];
 	const { instruction, NNN, NN, N, X, Y } = decodeOptcode(optcode);
@@ -36,13 +36,13 @@ export function cycle({ state, display }) {
 		state.programCounter = NNN;
 		break;
 	case 0x3:
-		state.programCounter += (state.registers[X] === NN ? 4 : 2);
+		incrementProgramCounter(state.registers[X] === NN ? 4 : 2);
 		break;
 	case 0x4:
-		state.programCounter += (state.registers[X] !== NN ? 4 : 2);
+		incrementProgramCounter(state.registers[X] !== NN ? 4 : 2);
 		break;
 	case 0x5:
-		state.programCounter += (state.registers[X] === state.registers[Y] ? 4 : 2);
+		incrementProgramCounter(state.registers[X] === state.registers[Y] ? 4 : 2);
 		break;
 	case 0x6:
 		state.registers[X] = NN;
@@ -132,8 +132,16 @@ export function cycle({ state, display }) {
 		break;
 	case 0xF:
 		switch (NN) {
-		case 0x1E:
-			state.addressRegister[0] += state.registers[X];
+		case 0x07:
+			state.registers[X] = Math.ceil(state.delayTimer / state.timerScaler);
+			incrementProgramCounter();
+			break;
+		case 0x15:
+			state.delayTimer = state.registers[X] * state.timerScaler;
+			incrementProgramCounter();
+			break;
+		case 0x18:
+			state.soundTimer = state.registers[X] * state.timerScaler;
 			incrementProgramCounter();
 			break;
 		case 0x55:
@@ -146,6 +154,10 @@ export function cycle({ state, display }) {
 			state.registers.set(
 				state.memory.slice(state.addressRegister[0], state.addressRegister[0] + X + 1),
 				0);
+			incrementProgramCounter();
+			break;
+		case 0x1E:
+			state.addressRegister[0] += state.registers[X];
 			incrementProgramCounter();
 			break;
 		}

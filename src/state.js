@@ -1,4 +1,4 @@
-export function State() {
+export function State({ timerScaler }) {
 	return {
 		memory: new Uint8Array(4096),
 		registers: new Uint8Array(0x10),
@@ -7,5 +7,6 @@ export function State() {
 		programCounter: 0,
 		delayTimer: 0,
 		soundTimer: 0,
+		timerScaler,
 	};
 }

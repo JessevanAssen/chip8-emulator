@@ -9,7 +9,7 @@ const TIMER_SCALER = 12;
 const context = document.querySelector('canvas').getContext('2d');
 const display = Display();
 
-const state = State();
+const state = State({ timerScaler: TIMER_SCALER });
 
 state.memory.set(sprites, 0);
 state.memory.set(IBMLogo, 0x200);
