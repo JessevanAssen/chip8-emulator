@@ -282,17 +282,17 @@ describe('cycle', () => {
 				cycle(setup);
 
 				expect(setup.state.registers[X]).toBe(75);
-				expect(setup.state.registers[0xF]).toBe(0);
+				expect(setup.state.registers[0xF]).toBe(1);
 			});
 
-			test('stores the borrow bit if the value becomes negative', () => {
+			test('makes the borrow bit 0 if the value becomes negative', () => {
 				const x = 25, y = 100;
 				const setup = SetupTest({ instruction: 5, x, y });
 
 				cycle(setup);
 
 				expect(setup.state.registers[X]).toBe(256 - 75);
-				expect(setup.state.registers[0xF]).toBe(1);
+				expect(setup.state.registers[0xF]).toBe(0);
 			});
 
 			testIncrementsProgramCounter({ program: [0x8005] });
@@ -323,17 +323,17 @@ describe('cycle', () => {
 				cycle(setup);
 
 				expect(setup.state.registers[X]).toBe(75);
-				expect(setup.state.registers[0xF]).toBe(0);
+				expect(setup.state.registers[0xF]).toBe(1);
 			});
 
-			test('stores the borrow bit if the value becomes negative', () => {
+			test('makes the borrow bit 0 if the value becomes negative', () => {
 				const x = 100, y = 25;
 				const setup = SetupTest({ instruction: 7, x, y });
 
 				cycle(setup);
 
 				expect(setup.state.registers[X]).toBe(256 - 75);
-				expect(setup.state.registers[0xF]).toBe(1);
+				expect(setup.state.registers[0xF]).toBe(0);
 			});
 
 			testIncrementsProgramCounter({ program: [0x8007] });

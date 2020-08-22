@@ -75,7 +75,7 @@ export function cycle({ state, display }) {
 		case 0x5: {
 			const result = state.registers[X] - state.registers[Y];
 			state.registers[X] = result;
-			state.registers[0xF] = result < 0 ? 1 : 0;
+			state.registers[0xF] = result < 0 ? 0 : 1;
 			break;
 		}
 		case 0x6:
@@ -85,7 +85,7 @@ export function cycle({ state, display }) {
 		case 0x7: {
 			const result = state.registers[Y] - state.registers[X];
 			state.registers[X] = result;
-			state.registers[0xF] = result < 0 ? 1 : 0;
+			state.registers[0xF] = result < 0 ? 0 : 1;
 			break;
 		}
 		case 0xE:
