@@ -144,6 +144,15 @@ export function cycle({ state, display }) {
 			state.soundTimer = state.registers[X] * state.timerScaler;
 			incrementProgramCounter();
 			break;
+		case 0x33: {
+			const I = state.addressRegister[0];
+			const x = state.registers[X];
+			state.memory[I + 0] = x / 100 % 10;
+			state.memory[I + 1] = x / 10  % 10;
+			state.memory[I + 2] = x       % 10;
+			incrementProgramCounter();
+			break;
+		}
 		case 0x55:
 			state.memory.set(
 				state.registers.slice(0, X + 1),

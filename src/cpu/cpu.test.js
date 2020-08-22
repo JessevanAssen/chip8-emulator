@@ -506,6 +506,23 @@ describe('cycle', () => {
 		testIncrementsProgramCounter({ program });
 	});
 
+	describe('0xFX33', () => {
+		const X = randomInt({ min: 0, max: 0x10 });
+		test('dumps the registers to memory', () => {
+			const setup = Setup({ program: [0xF033 | X << 8] });
+			setup.state.registers[X] = 123;
+			setup.state.addressRegister[0] = 0x100;
+
+			cycle(setup);
+
+			expect(setup.state.memory[0x100]).toBe(1);
+			expect(setup.state.memory[0x101]).toBe(2);
+			expect(setup.state.memory[0x102]).toBe(3);
+		});
+
+		testIncrementsProgramCounter({ program: [0xF033] });
+	});
+
 	describe('0xFX55', () => {
 		test('dumps the registers to memory', () => {
 			const count = randomInt({ min: 0, max: 0x10 });
