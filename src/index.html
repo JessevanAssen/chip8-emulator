@@ -4,14 +4,12 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>CHIP-8 emulator</title>
-	<script type="module" src="./index.js"></script>
+	<script type="module" src="./index.js" ></script>
 	<style>
 		body {
-			margin: 0;
 			overflow: hidden;
 		}
 		canvas {
-			margin: 1rem;
 			box-sizing: border-box;
 			width: 640px;
 			border: 5px solid black;
@@ -20,6 +18,10 @@
 	</style>
 </head>
 <body>
+	<p>
+		<label>Program: <input type="file" accept=".c8, .ch8"/></label>
+	</p>
+
 	<canvas width="64" height="32"></canvas>
 </body>
 </html>

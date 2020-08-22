@@ -92,6 +92,8 @@ export function cycle({ state, display }) {
 			state.registers[0xF] = (state.registers[X] >> 7) & 1;
 			state.registers[X] <<= 1;
 			break;
+		default:
+			throw UnknownOptcode(optcode);
 		}
 		incrementProgramCounter();
 		break;
@@ -105,8 +107,9 @@ export function cycle({ state, display }) {
 	case 0xB:
 		state.programCounter = NNN + state.registers[0];
 		break;
-	case 0xC:
-		break;
+	// TODO: Sets VX to the result of a bitwise and operation on a random number (Typically: 0 to 255) and NN
+	// case 0xC:
+	// 	break;
 	case 0xD: {
 		let pixelFlippedOff = false;
 
@@ -128,14 +131,26 @@ export function cycle({ state, display }) {
 		incrementProgramCounter();
 		break;
 	}
-	case 0xE:
-		break;
+	// TODO: Non-blocking keyboard instructions
+	// case 0xE:
+	// 	switch(NN) {
+	// 	// TODO: Skips the next instruction if the key stored in VX is pressed
+	// 	// case 0x9E:
+	// 	// 	break;
+	// 	// TODO: Skips the next instruction if the key stored in VX isn't pressed
+	// 	// case 0xA1:
+	// 	// 	break;
+	// 	}
+	// 	break;
 	case 0xF:
 		switch (NN) {
 		case 0x07:
 			state.registers[X] = Math.ceil(state.delayTimer / state.timerScaler);
 			incrementProgramCounter();
 			break;
+		// TODO: A key press is awaited, and then stored in VX. (Blocking Operation. All instruction halted until next key event)
+		// case 0x0A:
+		// 	break;
 		case 0x15:
 			state.delayTimer = state.registers[X] * state.timerScaler;
 			incrementProgramCounter();
@@ -144,6 +159,9 @@ export function cycle({ state, display }) {
 			state.soundTimer = state.registers[X] * state.timerScaler;
 			incrementProgramCounter();
 			break;
+		// TODO: Sets I to the location of the sprite for the character in VX. Characters 0-F (in hexadecimal) are represented by a 4x5 font
+		// case 0x29:
+		// 	break;
 		case 0x33: {
 			const I = state.addressRegister[0];
 			const x = state.registers[X];
@@ -169,10 +187,18 @@ export function cycle({ state, display }) {
 			state.addressRegister[0] += state.registers[X];
 			incrementProgramCounter();
 			break;
+		default:
+			throw UnknownOptcode(optcode);
 		}
 		break;
+	default:
+		throw UnknownOptcode(optcode);
 	}
 
 	if (state.delayTimer > 0) state.delayTimer--;
 	if (state.soundTimer > 0) state.soundTimer--;
+}
+
+function UnknownOptcode(optcode) {
+	return new Error(`Unknown optcode 0x${optcode.toString(16).toUpperCase().padStart(4, '0')}`);
 }
