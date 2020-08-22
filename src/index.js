@@ -20,6 +20,6 @@ setInterval(() => {
 		cycle({ state, display });
 	}
 
-	draw(display, context);
+	draw(display, context, { background: '#99c6ff', foreground: '#001633' });
 }, 1000 / 60);
 

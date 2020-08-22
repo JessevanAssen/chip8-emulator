@@ -31,10 +31,11 @@ export function Display() {
 	};
 }
 
-export function draw(display, context2d) {
-	context2d.clearRect(0, 0, context2d.canvas.width, context2d.canvas.height);
+export function draw(display, context2d, { foreground = 'black', background = 'white'} = {}) {
+	context2d.fillStyle = background;
+	context2d.fillRect(0, 0, context2d.canvas.width, context2d.canvas.height);
 
-	context2d.fillStyle = 'black';
+	context2d.fillStyle = foreground;
 	for (const { x, y, value } of display) {
 		if (value) {
 			context2d.fillRect(x, y, 1, 1);
