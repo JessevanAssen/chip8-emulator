@@ -506,6 +506,40 @@ describe('cycle', () => {
 		testIncrementsProgramCounter({ program });
 	});
 
+	describe('0xFX1E', () => {
+		const address = randomInt({ max: 0x100 });
+		const X = randomInt({ min: 0, max: 0xF });
+		const program = [0xF01E | X << 8];
+
+		test('adds the value in register X to the value in the address register', () => {
+			const x = randomInt({ min: 1, max: 0x100 });
+			const setup = Setup({ program });
+			setup.state.addressRegister[0] = address;
+			setup.state.registers[X] = x;
+
+			cycle(setup);
+			expect(setup.state.addressRegister[0]).toBe(address + x);
+		});
+
+		testIncrementsProgramCounter({ program });
+	});
+
+	describe('0xFX29', () => {
+		const X = randomInt({ min: 0, max: 0xF });
+
+		test('sets I to the location of the sprite for the character in VX', () => {
+			for (let i = 0; i <= 0xF; i++) {
+				const setup = Setup({ program: [0xF029 | X << 8] });
+				setup.state.registers[X] = i;
+
+				cycle(setup);
+				expect(setup.state.addressRegister[0]).toBe(i * 5);
+			}
+		});
+
+		testIncrementsProgramCounter({ program: [0xF029] });
+	});
+
 	describe('0xFX33', () => {
 		const X = randomInt({ min: 0, max: 0x10 });
 		test('dumps the registers to memory', () => {
@@ -561,24 +595,6 @@ describe('cycle', () => {
 		});
 
 		testIncrementsProgramCounter({ program: [0xF065] });
-	});
-
-	describe('FX1E', () => {
-		const address = randomInt({ max: 0x100 });
-		const X = randomInt({ min: 0, max: 0xF });
-		const program = [0xF01E | X << 8];
-
-		test('adds the value in register X to the value in the address register', () => {
-			const x = randomInt({ min: 1, max: 0x100 });
-			const setup = Setup({ program });
-			setup.state.addressRegister[0] = address;
-			setup.state.registers[X] = x;
-
-			cycle(setup);
-			expect(setup.state.addressRegister[0]).toBe(address + x);
-		});
-
-		testIncrementsProgramCounter({ program });
 	});
 
 	test('decrements the timers if they are above 0', () => {

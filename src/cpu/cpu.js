@@ -159,9 +159,10 @@ export function cycle({ state, display }) {
 			state.soundTimer = state.registers[X] * state.timerScaler;
 			incrementProgramCounter();
 			break;
-		// TODO: Sets I to the location of the sprite for the character in VX. Characters 0-F (in hexadecimal) are represented by a 4x5 font
-		// case 0x29:
-		// 	break;
+		case 0x29:
+			state.addressRegister[0] = state.registers[X] * 5;
+			incrementProgramCounter();
+			break;
 		case 0x33: {
 			const I = state.addressRegister[0];
 			const x = state.registers[X];
