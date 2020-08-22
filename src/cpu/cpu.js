@@ -1,3 +1,5 @@
+import { randomInt } from '../utils.js';
+
 export function decodeOptcode(optcode) {
 	return {
 		instruction: optcode >> 12 & 0x000F,
@@ -9,7 +11,7 @@ export function decodeOptcode(optcode) {
 	};
 }
 
-export function cycle({ state, display }) {
+export function cycle({ state, display, random = () => randomInt({ min: 0, max: 0x10 }) }) {
 	const incrementProgramCounter = (n = 2) => { state.programCounter += n; };
 
 	const optcode = (state.memory[state.programCounter] << 8) | state.memory[state.programCounter + 1];
@@ -107,9 +109,10 @@ export function cycle({ state, display }) {
 	case 0xB:
 		state.programCounter = NNN + state.registers[0];
 		break;
-	// TODO: Sets VX to the result of a bitwise and operation on a random number (Typically: 0 to 255) and NN
-	// case 0xC:
-	// 	break;
+	case 0xC:
+		state.registers[X] = random() & NN;
+		incrementProgramCounter();
+		break;
 	case 0xD: {
 		let pixelFlippedOff = false;
 

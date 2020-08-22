@@ -405,6 +405,24 @@ describe('cycle', () => {
 		});
 	});
 
+	describe('0xCXNN', () => {
+		test('generates a random number', () => {
+			const setup = Setup({ program: [0xC1FF] });
+
+			cycle({ ...setup, random: () => 247 });
+			expect(setup.state.registers[1]).toBe(247);
+		});
+
+		test('Does a bitwise AND between the random number and NN', () => {
+			const setup = Setup({ program: [0xC100 | 0b00001111] });
+
+			cycle({ ...setup, random: () => 0b11001100 });
+			expect(setup.state.registers[1]).toBe(0b00001100);
+		});
+
+		testIncrementsProgramCounter({ program: [0xC000] });
+	});
+
 	describe('0xDXYN', () => {
 		const program = [0x6005, 0x610A, 0xA008, 0xD012, 0b1010101001010101];
 
