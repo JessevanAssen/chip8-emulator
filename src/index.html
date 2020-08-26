@@ -12,6 +12,7 @@
 		canvas {
 			box-sizing: border-box;
 			width: 640px;
+			max-width: 100%;
 			border: 5px solid black;
 			image-rendering: pixelated;
 		}
@@ -19,7 +20,10 @@
 </head>
 <body>
 	<p>
-		<label>Program: <input type="file" accept=".c8, .ch8"/></label>
+		<label>Program: <input id="file" type="file" accept=".c8, .ch8"/></label>
+	</p>
+	<p>
+		<label>Sound enabled: <input id="enableAudio" type="checkbox" /></label>
 	</p>
 
 	<canvas width="64" height="32"></canvas>
