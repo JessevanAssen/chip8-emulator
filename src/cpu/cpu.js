@@ -1,15 +1,5 @@
 import { randomInt } from '../utils.js';
-
-export function decodeOptcode(optcode) {
-	return {
-		instruction: optcode >> 12 & 0x000F,
-		NNN: optcode & 0x0FFF,
-		NN: optcode & 0x00FF,
-		N: optcode & 0x000F,
-		X: optcode >> 8 & 0x000F,
-		Y: optcode >> 4 & 0x000F,
-	};
-}
+import { decodeOptcode } from './optcode.js';
 
 export function cycle({ state, display, random = () => randomInt({ min: 0, max: 0x10 }) }) {
 	const incrementProgramCounter = (n = 2) => { state.programCounter += n; };

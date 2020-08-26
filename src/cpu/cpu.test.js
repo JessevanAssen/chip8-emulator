@@ -1,38 +1,9 @@
 import { jest } from '@jest/globals';
 
-import { decodeOptcode, cycle } from './cpu.js';
+import { cycle } from './cpu.js';
 import { State } from '../state.js';
 import { randomInt } from '../utils.js';
 
-
-describe('decodeOptcode', () => {
-	const { instruction, NNN, NN, N, X, Y } = decodeOptcode(0b0011110001011010);
-
-	test('extracts the instruction', () => {
-		expect(instruction)
-			.toBe(0b0011);
-	});
-	test('extracts NNN', () => {
-		expect(NNN)
-			.toBe(0b110001011010);
-	});
-	test('extracts NN', () => {
-		expect(NN)
-			.toBe(0b01011010);
-	});
-	test('extracts N', () => {
-		expect(N)
-			.toBe(0b1010);
-	});
-	test('extracts X', () => {
-		expect(X)
-			.toBe(0b1100);
-	});
-	test('extracts Y', () => {
-		expect(Y)
-			.toBe(0b0101);
-	});
-});
 
 describe('cycle', () => {
 	describe('0x00E0', () => {
