@@ -502,6 +502,55 @@ describe('cycle', () => {
 		testIncrementsProgramCounter({ program });
 	});
 
+	describe('0xFX07', () => {
+		const X = 0xB;
+		const program = [0xF00A | (X << 8)];
+
+		describe('if no keys are pressed', () => {
+			test('program counter is not incremented', () => {
+				const setup = Setup({ program });
+				cycle(setup);
+
+				expect(setup.state.programCounter).toBe(0);
+			});
+
+			test('timers are not updated', () => {
+				const setup = Setup({ program });
+				setup.state.delayTimer = 0x7F;
+				setup.state.soundTimer = 0xFF;
+				cycle(setup);
+
+				expect(setup.state.delayTimer).toBe(0x7F);
+				expect(setup.state.soundTimer).toBe(0xFF);
+			});
+		});
+
+		describe('if a key is pressed', () => {
+			test('the key is stored in X', () => {
+				const setup = Setup({ program, keysPressed: [0xA] });
+				cycle(setup);
+				expect(setup.state.registers[X]).toBe(0xA);
+			});
+
+			test('program counter is incremented', () => {
+				const setup = Setup({ program, keysPressed: [0] });
+				cycle(setup);
+				expect(setup.state.programCounter).toBe(2);
+
+			});
+			test('timers are updated', () => {
+				const setup = Setup({ program, keysPressed: [0] });
+				setup.state.delayTimer = 0x7F;
+				setup.state.soundTimer = 0xFF;
+				cycle(setup);
+
+				expect(setup.state.delayTimer).toBe(0x7E);
+				expect(setup.state.soundTimer).toBe(0xFE);
+
+			});
+		});
+	});
+
 	describe('0xFX15', () => {
 		const X = 0xB;
 		const program = [0xF015 | X << 8];

@@ -1,5 +1,5 @@
-import { randomInt } from '../utils.js';
 import { decodeOptcode } from './optcode.js';
+import { randomInt, getPressedKey } from '../utils.js';
 
 export function cycle({ state, display, keyboard, random = () => randomInt({ min: 0, max: 0x100 }) }) {
 	const incrementProgramCounter = (n = 2) => { state.programCounter += n; };
@@ -143,9 +143,15 @@ export function cycle({ state, display, keyboard, random = () => randomInt({ min
 			state.registers[X] = Math.ceil(state.delayTimer / state.timerScaler);
 			incrementProgramCounter();
 			break;
-		// TODO: A key press is awaited, and then stored in VX. (Blocking Operation. All instruction halted until next key event)
-		// case 0x0A:
-		// 	break;
+		case 0x0A:
+			if (keyboard[0] === 0)
+				// Deliberately stop executing the function, so the program counter
+				// and timers are not updated.
+				return;
+
+			state.registers[X] = getPressedKey(keyboard);
+			incrementProgramCounter();
+			break;
 		case 0x15:
 			state.delayTimer = state.registers[X] * state.timerScaler;
 			incrementProgramCounter();
