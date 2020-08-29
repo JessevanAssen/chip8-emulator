@@ -31,8 +31,15 @@ export function Speaker() {
 			context.suspend();
 	}
 
+	function setPlaying(shouldPlay) {
+		if (shouldPlay)
+			play();
+		else
+			pause();
+	}
+
 	return {
 		enable, disable,
-		play, pause,
+		play, pause, setPlaying,
 	};
 }

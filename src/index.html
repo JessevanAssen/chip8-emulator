@@ -6,9 +6,28 @@
 	<title>CHIP-8 emulator</title>
 	<script type="module" src="./index.js" ></script>
 	<style>
-		body {
-			overflow: hidden;
+		* {
+			box-sizing: border-box;
 		}
+
+		body {
+			margin: 0;
+		}
+
+		main {
+			max-height: 100vh;
+			padding: 1em;
+			display: grid;
+			grid-gap: 1em;
+			grid-template:
+				minmax(0, 1fr) /
+				300px 1fr;
+		}
+
+		main > * {
+			overflow-y: auto;
+		}
+
 		canvas {
 			box-sizing: border-box;
 			width: 640px;
@@ -16,16 +35,54 @@
 			border: 5px solid black;
 			image-rendering: pixelated;
 		}
+
+		#debugger {
+			display: grid;
+			grid-template-rows: auto minmax(0, 1fr);
+		}
+
+		#instructions {
+			overflow-y: auto;
+		}
+
+		#instructions {
+			font-family: monospace;
+		}
+
+		#instructions > *.active > * {
+			background: green;
+		}
+
+		#instructions [data-line]::before {
+			content: attr(data-line);
+			display: inline-block;
+			text-align: end;
+			padding-right: 1em;
+		}
+
+		#instructions > .active {
+			background: orange;
+		}
+
 	</style>
 </head>
 <body>
-	<p>
-		<label>Program: <input id="file" type="file" accept=".c8, .ch8"/></label>
-	</p>
-	<p>
-		<label>Sound enabled: <input id="enableAudio" type="checkbox" /></label>
-	</p>
+	<main>
+		<div id="debugger">
+			<div>
+				<button type="button" disabled id="pause">Pause</button>
+				<button type="button" disabled id="step-over">Step over</button>
+				<button type="button" disabled id="resume">Resume</button>
+			</div>
+			<div id="instructions"></div>
+		</div>
 
-	<canvas width="64" height="32"></canvas>
+		<div id="gui">
+			<div><label>Program: <input id="file" type="file" accept=".c8, .ch8"/></label></div>
+			<div><label>Sound enabled: <input id="enableAudio" type="checkbox" /></label></div>
+			<canvas width="64" height="32"></canvas>
+		</div>
+
+	</main>
 </body>
 </html>

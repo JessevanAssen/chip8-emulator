@@ -1,7 +1,7 @@
 import { randomInt } from '../utils.js';
 import { decodeOptcode } from './optcode.js';
 
-export function cycle({ state, display, random = () => randomInt({ min: 0, max: 0x10 }) }) {
+export function cycle({ state, display, random = () => randomInt({ min: 0, max: 0x100 }) }) {
 	const incrementProgramCounter = (n = 2) => { state.programCounter += n; };
 
 	const optcode = (state.memory[state.programCounter] << 8) | state.memory[state.programCounter + 1];

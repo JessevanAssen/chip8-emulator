@@ -2,58 +2,151 @@ import { Display, draw } from './display/index.js';
 import { Speaker } from './speaker.js';
 import { State } from './state.js';
 import { cycle } from './cpu/index.js';
-
+import { disassemble } from './cpu/index.js';
 import { sprites } from './assets/index.js';
 
 const TIMER_SCALER = 12;
+const DISPLAY_FOREGROUND = '#001633', DISPLAY_BACKGROUND = '#99c6ff';
 
 const context = document.querySelector('canvas').getContext('2d');
-let stopCurrentProgram;
 
-const speaker = Speaker();
+let stopLoop, state;
 
-document.querySelector('#enableAudio').addEventListener('change', ({ target }) => {
-	if (target.checked) {
-		speaker.enable();
-	} else {
-		speaker.disable();
+const speaker = setupSpeaker();
+const display = Display();
+
+const pauseButton = document.querySelector('button#pause'),
+	stepOverButton = document.querySelector('button#step-over'),
+	resumeButton = document.querySelector('button#resume');
+
+pauseButton.addEventListener('click', pause);
+stepOverButton.addEventListener('click', stepOver);
+resumeButton.addEventListener('click', resume);
+
+onNewProgram(newProgram => {
+	if (stopLoop) {
+		stopLoop();
+		stopLoop = undefined;
 	}
+
+	state = newProgram.state;
+	resume();
 });
 
-document.querySelector('#file').addEventListener('change', async ({ target: { files } }) => {
-	if (stopCurrentProgram) {
-		stopCurrentProgram();
-		stopCurrentProgram = undefined;
-	}
 
-	if (files.length === 0)
-		return;
+function onNewProgram(callback) {
+	document.querySelector('#file').addEventListener('change', async ({ target: { files } }) => {
+		if (files.length === 0)
+			return;
 
-	const program = new Uint8Array(await files[0].arrayBuffer());
-	stopCurrentProgram = startProgram({ program });
-});
+		display.clear();
 
-function startProgram({ program }) {
-	const display = Display();
+		const program = new Uint8Array(await files[0].arrayBuffer());
 
-	const state = State({ timerScaler: TIMER_SCALER });
-	state.memory.set(sprites, 0);
-	state.memory.set(program, 0x200);
-	state.programCounter = 0x200;
+		state = State({ timerScaler: TIMER_SCALER });
+		state.memory.set(sprites, 0);
+		state.memory.set(program, 0x200);
+		state.programCounter = 0x200;
 
+		callback({ state });
+	});
+}
+
+function loop() {
 	const interval = setInterval(() => {
 		for (let i = 0; i < TIMER_SCALER; i++) {
 			cycle({ state, display });
 		}
 
-		draw(display, context, { background: '#99c6ff', foreground: '#001633' });
-
-		if (state.soundTimer > 0) {
-			speaker.play();
-		} else {
-			speaker.pause();
-		}
+		draw(display, context, { background: DISPLAY_BACKGROUND, foreground: DISPLAY_FOREGROUND });
+		speaker.setPlaying(state.soundTimer > 0);
 	}, 1000 / 60);
+	return () => clearInterval(interval);
+}
 
-	return () => { clearInterval(interval); };
+function pause() {
+	if (stopLoop) {
+		stopLoop();
+		stopLoop = undefined;
+	}
+
+	speaker.pause();
+
+	pauseButton.disabled = true;
+	stepOverButton.disabled = false;
+	resumeButton.disabled = false;
+
+	renderInstructions(state.memory);
+
+	stepOver();
+}
+
+function stepOver() {
+	console.log('step');
+	cycle({ state, display });
+	draw(display, context, { background: DISPLAY_BACKGROUND, foreground: DISPLAY_FOREGROUND });
+	markInstruction(Math.floor(state.programCounter / 2));
+}
+
+function resume() {
+	stopLoop = loop();
+
+	pauseButton.disabled = false;
+	stepOverButton.disabled = true;
+	resumeButton.disabled = true;
+
+	renderInstructions([]);
+}
+
+function markInstruction(index) {
+	const target = document.querySelector('#instructions');
+	for (const i of target.querySelectorAll('.active')) {
+		i.classList.remove('active');
+	}
+	if (target.children.length >= index) {
+		target.children[index].classList.add('active');
+		target.children[index].scrollIntoView({ block: 'center', behavior: 'auto' });
+	}
+}
+
+function renderInstructions(memory) {
+	const target = document.querySelector('#instructions');
+	target.innerHTML = '';
+
+	const output = document.createDocumentFragment();
+	for (let i = 0; i < memory.length; i += 2) {
+		const optCode = memory[i] << 8 | memory[i + 1];
+		const line = hex(i, 3);
+		const text = disassemble(optCode) ?? `(${hex(optCode, 4)})`;
+		output.appendChild(Element(
+			'div',
+			{ dataset: { line } },
+			text,
+		));
+	}
+	target.appendChild(output);
+}
+
+function Element(tagName, { dataset = {}, ...props} = {}, ...children) {
+	const element = document.createElement(tagName);
+	Object.assign(element, props);
+	Object.assign(element.dataset, dataset);
+	element.append(...children);
+	return element;
+}
+
+function setupSpeaker() {
+	const speaker = Speaker();
+	document.querySelector('#enableAudio').addEventListener('change', ({ target }) => {
+		if (target.checked) {
+			speaker.enable();
+		} else {
+			speaker.disable();
+		}
+	});
+	return speaker;
+}
+
+function hex(data, maxLength) {
+	return `0x${data.toString(16).toUpperCase().padStart(maxLength, 0)}`;
 }
