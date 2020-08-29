@@ -1,7 +1,7 @@
 import { randomInt } from '../utils.js';
 import { decodeOptcode } from './optcode.js';
 
-export function cycle({ state, display, random = () => randomInt({ min: 0, max: 0x100 }) }) {
+export function cycle({ state, display, keyboard, random = () => randomInt({ min: 0, max: 0x100 }) }) {
 	const incrementProgramCounter = (n = 2) => { state.programCounter += n; };
 
 	const optcode = (state.memory[state.programCounter] << 8) | state.memory[state.programCounter + 1];
@@ -124,17 +124,19 @@ export function cycle({ state, display, random = () => randomInt({ min: 0, max: 
 		incrementProgramCounter();
 		break;
 	}
-	// TODO: Non-blocking keyboard instructions
-	// case 0xE:
-	// 	switch(NN) {
-	// 	// TODO: Skips the next instruction if the key stored in VX is pressed
-	// 	// case 0x9E:
-	// 	// 	break;
-	// 	// TODO: Skips the next instruction if the key stored in VX isn't pressed
-	// 	// case 0xA1:
-	// 	// 	break;
-	// 	}
-	// 	break;
+	case 0xE: {
+		let stepSize;
+		switch(NN) {
+		case 0x9E:
+			stepSize = (keyboard[0] & (1 << state.registers[X])) ? 4 : 2;
+			break;
+		case 0xA1:
+			stepSize = (keyboard[0] & (1 << state.registers[X])) ? 2 : 4;
+			break;
+		}
+		incrementProgramCounter(stepSize);
+		break;
+	}
 	case 0xF:
 		switch (NN) {
 		case 0x07:

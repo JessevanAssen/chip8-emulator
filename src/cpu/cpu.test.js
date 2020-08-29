@@ -442,6 +442,49 @@ describe('cycle', () => {
 		});
 	});
 
+	describe('0xEX9E', () => {
+		const X = 0x5;
+		const program = [0xE09E | (X << 8)];
+
+		test('increments the program counter by 4 if the key stored in VX is pressed', () => {
+			const key = 0xA;
+			const setup = Setup({ program, keysPressed: [key] });
+			setup.state.registers[X] = key;
+
+			cycle(setup);
+			expect(setup.state.programCounter).toBe(4);
+		});
+
+		test('increments the program counter by 2 if the key stored in VX is not pressed', () => {
+			const setup = Setup({ program, keysPressed: [0x0, 0x1, 0x2, 0x3, 0x5, 0x6, 0x7, 0x8, 0x9, 0xB, 0xC, 0xD, 0xE, 0xF] });
+			setup.state.registers[X] = 0xA;
+
+			cycle(setup);
+			expect(setup.state.programCounter).toBe(2);
+		});
+	});
+
+	describe('0xEXA1', () => {
+		const X = 0x5;
+		const program = [0xE0A1 | (X << 8)];
+
+		test('increments the program counter by 2 if the key stored in VX is pressed', () => {
+			const key = 0xA;
+			const setup = Setup({ program, keysPressed: [key] });
+			setup.state.registers[X] = key;
+
+			cycle(setup);
+			expect(setup.state.programCounter).toBe(2);
+		});
+
+		test('increments the program counter by 4 if the key stored in VX is not pressed', () => {
+			const setup = Setup({ program, keysPressed: [0x0, 0x1, 0x2, 0x3, 0x5, 0x6, 0x7, 0x8, 0x9, 0xB, 0xC, 0xD, 0xE, 0xF] });
+			setup.state.registers[X] = 0xA;
+
+			cycle(setup);
+			expect(setup.state.programCounter).toBe(4);
+		});	});
+
 	describe('0xFX07', () => {
 		const X = 0x3;
 		const program = [0xF007 | X << 8];
@@ -612,7 +655,7 @@ describe('cycle', () => {
 	}
 });
 
-function Setup({ program = required('program'), timerScaler = 10 } = {}) {
+function Setup({ program = required('program'), timerScaler = 10, keysPressed = [] } = {}) {
 	const state = State({ timerScaler });
 
 	for (let i = 0; i < program.length; i++) {
@@ -625,7 +668,11 @@ function Setup({ program = required('program'), timerScaler = 10 } = {}) {
 		flipPixel: jest.fn().mockReturnValue(true),
 	};
 
-	return { state, display };
+	const keyboard = Uint16Array.of(
+		keysPressed.reduce((acc, key) => acc | (1 << key), 0),
+	);
+
+	return { state, display, keyboard };
 }
 
 function required(parameter) {

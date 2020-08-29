@@ -14,6 +14,7 @@ let stopLoop, state;
 
 const speaker = setupSpeaker();
 const display = Display();
+const keyboard = new Uint16Array(1);
 
 const pauseButton = document.querySelector('button#pause'),
 	stepOverButton = document.querySelector('button#step-over'),
@@ -22,6 +23,8 @@ const pauseButton = document.querySelector('button#pause'),
 pauseButton.addEventListener('click', pause);
 stepOverButton.addEventListener('click', stepOver);
 resumeButton.addEventListener('click', resume);
+
+setupKeyboard();
 
 onNewProgram(newProgram => {
 	if (stopLoop) {
@@ -55,7 +58,7 @@ function onNewProgram(callback) {
 function loop() {
 	const interval = setInterval(() => {
 		for (let i = 0; i < TIMER_SCALER; i++) {
-			cycle({ state, display });
+			cycle({ state, display, keyboard });
 		}
 
 		draw(display, context, { background: DISPLAY_BACKGROUND, foreground: DISPLAY_FOREGROUND });
@@ -83,7 +86,7 @@ function pause() {
 
 function stepOver() {
 	console.log('step');
-	cycle({ state, display });
+	cycle({ state, display, keyboard });
 	draw(display, context, { background: DISPLAY_BACKGROUND, foreground: DISPLAY_FOREGROUND });
 	markInstruction(Math.floor(state.programCounter / 2));
 }
@@ -145,6 +148,43 @@ function setupSpeaker() {
 		}
 	});
 	return speaker;
+}
+
+function setupKeyboard() {
+	const keyboardContainer = document.querySelector('#keyboard');
+
+	function enableKey(keyCode) {
+		keyboard[0] |= 1 << keyCode;
+	}
+
+	function disableKey(keyCode) {
+		keyboard[0] &= ~(1 << keyCode);
+	}
+
+	keyboardContainer.addEventListener('mousedown', event => {
+		if (!event.target.dataset['key']) return;
+
+		const key = Number.parseInt(event.target.dataset['key'], 16);
+		enableKey(key);
+
+		document.body.addEventListener('mouseup', () => {
+			disableKey(key);
+		}, { once: true, passive: true });
+
+	}, { passive: true });
+
+	keyboardContainer.addEventListener('keydown', event => {
+		if (event.repeat === true || event.code !== 'Enter' && event.code !== 'Space') return;
+		if (!event.target.dataset['key']) return;
+
+		const key = Number.parseInt(event.target.dataset['key'], 16);
+		enableKey(key);
+
+		document.body.addEventListener('keyup', () => {
+			disableKey(key);
+		}, { once: true, passive: true });
+
+	}, { passive: true });
 }
 
 function hex(data, maxLength) {

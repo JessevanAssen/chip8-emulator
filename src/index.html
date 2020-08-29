@@ -64,6 +64,14 @@
 			background: orange;
 		}
 
+		#keyboard {
+			display: grid;
+			gap: 4px;
+			grid-template: repeat(4, auto) / repeat(4, minmax(0, 1fr));
+			width: 200px;
+			height: 200px;
+		}
+
 	</style>
 </head>
 <body>
@@ -81,6 +89,25 @@
 			<div><label>Program: <input id="file" type="file" accept=".c8, .ch8"/></label></div>
 			<div><label>Sound enabled: <input id="enableAudio" type="checkbox" /></label></div>
 			<canvas width="64" height="32"></canvas>
+
+			<div id="keyboard">
+				<button data-key="0">0</button>
+				<button data-key="1">1</button>
+				<button data-key="2">2</button>
+				<button data-key="3">3</button>
+				<button data-key="4">4</button>
+				<button data-key="5">5</button>
+				<button data-key="6">6</button>
+				<button data-key="7">7</button>
+				<button data-key="8">8</button>
+				<button data-key="9">9</button>
+				<button data-key="A">A</button>
+				<button data-key="B">B</button>
+				<button data-key="C">C</button>
+				<button data-key="D">D</button>
+				<button data-key="E">E</button>
+				<button data-key="F">F</button>
+			</div>
 		</div>
 
 	</main>
