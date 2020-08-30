@@ -85,10 +85,10 @@ function pause() {
 }
 
 function stepOver() {
-	console.log('step');
 	cycle({ state, display, keyboard });
 	draw(display, context, { background: DISPLAY_BACKGROUND, foreground: DISPLAY_FOREGROUND });
 	markInstruction(Math.floor(state.programCounter / 2));
+	renderValues(state);
 }
 
 function resume() {
@@ -98,6 +98,7 @@ function resume() {
 	stepOverButton.disabled = true;
 	resumeButton.disabled = true;
 
+	renderValues();
 	renderInstructions([]);
 }
 
@@ -112,6 +113,34 @@ function markInstruction(index) {
 	}
 }
 
+function renderValues(state) {
+	const target = document.querySelector('#values');
+	target.innerHTML = '';
+
+	if (!state) return;
+
+	const output = Element('table');
+
+	output.append(Row('PC', hex(state.programCounter, 3)));
+
+	output.append(Row('I', hex(state.addressRegister[0], 4)));
+
+	output.append(
+		...Array.from(state.registers)
+			.map((registerValue, i) =>
+				Row(`V${i.toString(16).toUpperCase()}`, hex(registerValue, 2))));
+
+	output.append(Row('DT', hex(Math.floor(state.delayTimer / state.timerScaler), 2)));
+	output.append(Row('ST', hex(Math.floor(state.soundTimer / state.timerScaler), 2)));
+
+	target.appendChild(output);
+
+	function Row(...values) {
+		return Element('tr', undefined,
+			...values.map(value => Element('td', undefined, value)));
+	}
+}
+
 function renderInstructions(memory) {
 	const target = document.querySelector('#instructions');
 	target.innerHTML = '';
@@ -120,7 +149,9 @@ function renderInstructions(memory) {
 	for (let i = 0; i < memory.length; i += 2) {
 		const optCode = memory[i] << 8 | memory[i + 1];
 		const line = hex(i, 3);
-		const text = disassemble(optCode) ?? `(${hex(optCode, 4)})`;
+		const instruction = hex(optCode, 4);
+		const disassembled = disassemble(optCode);
+		const text = disassembled ? `${instruction}: ${disassembled}` : instruction;
 		output.appendChild(Element(
 			'div',
 			{ dataset: { line } },

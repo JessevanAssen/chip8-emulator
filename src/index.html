@@ -38,15 +38,13 @@
 
 		#debugger {
 			display: grid;
-			grid-template-rows: auto minmax(0, 1fr);
-		}
-
-		#instructions {
-			overflow-y: auto;
-		}
-
-		#instructions {
+			grid-template-rows: auto;
+			grid-auto-rows: minmax(0, 1fr);
 			font-family: monospace;
+		}
+
+		#values, #instructions {
+			overflow-y: auto;
 		}
 
 		#instructions > *.active > * {
@@ -77,11 +75,12 @@
 <body>
 	<main>
 		<div id="debugger">
-			<div>
+			<div id="debugger-buttons">
 				<button type="button" disabled id="pause">Pause</button>
 				<button type="button" disabled id="step-over">Step over</button>
 				<button type="button" disabled id="resume">Resume</button>
 			</div>
+			<div id="values"></div>
 			<div id="instructions"></div>
 		</div>
 
